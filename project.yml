@@ -1,0 +1,12 @@
+name: MiApp
+options:
+  bundleIdPrefix: com.tuempresa
+  deploymentTarget:
+    iOS: '17.0'
+targets:
+  MiApp:
+    type: application
+    platform: iOS
+    sources: [MiApp]
+    scheme:
+      testTargets: []
