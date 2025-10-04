@@ -11,12 +11,17 @@ jobs:
     runs-on: macos-latest
 
     steps:
+      # 1️⃣ Clonar el repositorio
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+      # 2️⃣ Verificar versión de Xcode disponible
+      - name: Check Xcode version
+        run: |
+          xcodebuild -version
+          xcode-select -p
 
+      # 3️⃣ Cache SwiftPM / DerivedData
       - name: Cache SwiftPM
         uses: actions/cache@v4
         with:
@@ -26,26 +31,44 @@ jobs:
           key: ${{ runner.os }}-swiftpm-${{ hashFiles('**/Package.resolved') }}
           restore-keys: ${{ runner.os }}-swiftpm-
 
-     - name: Build
-  run: |
-    xcodebuild clean build \
-      -scheme YourAppScheme \
-      -project YourApp.xcodeproj \
-      -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' \
-      CODE_SIGNING_ALLOWED=NO
+      # 4️⃣ Compilar la app (sin firmar)
+      - name: Build app
+        run: |
+          xcodebuild clean build \
+            -scheme YourAppScheme \
+            -project YourApp.xcodeproj \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' \
+            CODE_SIGNING_ALLOWED=NO
+
+      # 5️⃣ Ejecutar tests
       - name: Run Unit Tests
         run: |
-          xcodebuild test             -scheme YourAppScheme             -project YourApp.xcodeproj             -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5'             CODE_SIGNING_ALLOWED=NO
+          xcodebuild test \
+            -scheme YourAppScheme \
+            -project YourApp.xcodeproj \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' \
+            CODE_SIGNING_ALLOWED=NO
 
+      # 6️⃣ Crear archive
       - name: Archive app
         run: |
-          xcodebuild archive             -scheme YourAppScheme             -project YourApp.xcodeproj             -archivePath $PWD/build/YourApp.xcarchive             CODE_SIGNING_ALLOWED=NO
+          mkdir -p build
+          xcodebuild archive \
+            -scheme YourAppScheme \
+            -project YourApp.xcodeproj \
+            -archivePath $PWD/build/YourApp.xcarchive \
+            CODE_SIGNING_ALLOWED=NO
 
+      # 7️⃣ Exportar IPA sin firmar (development)
       - name: Export IPA
         run: |
-          xcodebuild -exportArchive             -archivePath $PWD/build/YourApp.xcarchive             -exportOptionsPlist ExportOptions.plist             -exportPath $PWD/build
+          xcodebuild -exportArchive \
+            -archivePath $PWD/build/YourApp.xcarchive \
+            -exportOptionsPlist ExportOptions.plist \
+            -exportPath $PWD/build
 
-      - name: Upload build as artifact
+      # 8️⃣ Subir artefactos
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: iOS-Build
